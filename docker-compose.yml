@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # MongoDB for optional snippet storage
+  mongodb:
+    image: mongo:7
+    container_name: compiler-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  # Code execution sandbox
+  code-runner:
+    build: ./server/compiler/docker
+    container_name: code-runner
+    read_only: true
+    tmpfs:
+      - /code:size=50M,uid=1000
+      - /tmp:size=50M,uid=1000
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    network_mode: none
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
