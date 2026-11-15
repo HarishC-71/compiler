@@ -1,0 +1,439 @@
+@import "tailwindcss";
+
+/* ============================================
+   VS Code Dark Theme - Design System
+   ============================================ */
+
+@theme {
+  /* VS Code Dark+ Color Palette */
+  --color-vsc-bg: #1e1e1e;
+  --color-vsc-sidebar: #252526;
+  --color-vsc-activitybar: #333333;
+  --color-vsc-statusbar: #007acc;
+  --color-vsc-statusbar-debug: #cc6633;
+  --color-vsc-menubar: #3c3c3c;
+  --color-vsc-tab-active: #1e1e1e;
+  --color-vsc-tab-inactive: #2d2d2d;
+  --color-vsc-tab-border: #252526;
+  --color-vsc-border: #3e3e42;
+  --color-vsc-input-bg: #3c3c3c;
+  --color-vsc-input-border: #5a5a5a;
+  --color-vsc-hover: #2a2d2e;
+  --color-vsc-active: #37373d;
+  --color-vsc-selection: #264f78;
+  --color-vsc-highlight: #e8e8e8;
+  --color-vsc-text: #cccccc;
+  --color-vsc-text-dim: #858585;
+  --color-vsc-text-bright: #e8e8e8;
+  --color-vsc-icon: #c5c5c5;
+  --color-vsc-icon-dim: #858585;
+  --color-vsc-terminal-bg: #1e1e1e;
+  --color-vsc-terminal-green: #4ec9b0;
+  --color-vsc-terminal-red: #f44747;
+  --color-vsc-terminal-yellow: #dcdcaa;
+  --color-vsc-terminal-blue: #569cd6;
+  --color-vsc-terminal-cyan: #9cdcfe;
+  --color-vsc-terminal-magenta: #c586c0;
+  --color-vsc-scrollbar: #79797966;
+  --color-vsc-scrollbar-hover: #bfbfbf66;
+  --color-vsc-badge: #4d78cc;
+  --color-vsc-success: #89d185;
+  --color-vsc-error: #f48771;
+  --color-vsc-warning: #cca700;
+  --color-vsc-info: #75beff;
+
+  /* Font System */
+  --font-vsc: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, "Ubuntu", "Droid Sans", sans-serif;
+  --font-vsc-mono: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+
+  /* Spacing */
+  --spacing-activity: 48px;
+  --spacing-sidebar: 250px;
+  --spacing-statusbar: 22px;
+  --spacing-menubar: 35px;
+  --spacing-tabbar: 35px;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--color-vsc-bg);
+  color: var(--color-vsc-text);
+  font-family: var(--font-vsc);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Custom Scrollbar (VS Code Style)
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-vsc-scrollbar);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vsc-scrollbar-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ============================================
+   Selection Colors
+   ============================================ */
+
+::selection {
+  background: var(--color-vsc-selection);
+  color: var(--color-vsc-text-bright);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes terminalCursor {
+  0%, 49% { background-color: var(--color-vsc-text); }
+  50%, 100% { background-color: transparent; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideInUp 0.2s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   VS Code Layout Grid
+   ============================================ */
+
+.vsc-layout {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  grid-template-columns: var(--spacing-activity) var(--spacing-sidebar) 1fr;
+  grid-template-rows: var(--spacing-menubar) 1fr var(--spacing-statusbar);
+  grid-template-areas:
+    "menubar menubar menubar"
+    "activity sidebar editor"
+    "statusbar statusbar statusbar";
+  overflow: hidden;
+}
+
+.vsc-layout.sidebar-collapsed {
+  grid-template-columns: var(--spacing-activity) 0px 1fr;
+}
+
+.vsc-menubar {
+  grid-area: menubar;
+}
+
+.vsc-activity {
+  grid-area: activity;
+}
+
+.vsc-sidebar {
+  grid-area: sidebar;
+  overflow: hidden;
+  transition: width 0.15s ease;
+}
+
+.vsc-editor-area {
+  grid-area: editor;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.vsc-statusbar {
+  grid-area: statusbar;
+}
+
+/* ============================================
+   Glassmorphism Effect
+   ============================================ */
+
+.glass-panel {
+  background: rgba(37, 37, 38, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   Context Menu
+   ============================================ */
+
+.context-menu {
+  position: fixed;
+  background: var(--color-vsc-menubar);
+  border: 1px solid var(--color-vsc-border);
+  border-radius: 5px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.context-menu-item {
+  padding: 4px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-vsc-text);
+  transition: background 0.1s;
+}
+
+.context-menu-item:hover {
+  background: var(--color-vsc-selection);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: var(--color-vsc-border);
+  margin: 4px 0;
+}
+
+/* ============================================
+   Terminal Styles
+   ============================================ */
+
+.terminal-container {
+  font-family: var(--font-vsc-mono);
+  font-size: 13px;
+  line-height: 1.4;
+  background: var(--color-vsc-terminal-bg);
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-line.stdout {
+  color: var(--color-vsc-text);
+}
+
+.terminal-line.stderr {
+  color: var(--color-vsc-terminal-red);
+}
+
+.terminal-line.info {
+  color: var(--color-vsc-terminal-cyan);
+}
+
+.terminal-line.system {
+  color: var(--color-vsc-terminal-green);
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  animation: terminalCursor 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: var(--color-vsc-text);
+  font-family: var(--font-vsc-mono);
+  font-size: 13px;
+  outline: none;
+  flex: 1;
+  caret-color: var(--color-vsc-text);
+}
+
+/* ============================================
+   Resize Handle
+   ============================================ */
+
+.resize-handle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--color-vsc-statusbar);
+}
+
+/* ============================================
+   Dropdown / Select
+   ============================================ */
+
+.vsc-select {
+  background: var(--color-vsc-input-bg);
+  color: var(--color-vsc-text);
+  border: 1px solid var(--color-vsc-input-border);
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: var(--font-vsc);
+  outline: none;
+  cursor: pointer;
+}
+
+.vsc-select:focus {
+  border-color: var(--color-vsc-statusbar);
+}
+
+.vsc-select option {
+  background: var(--color-vsc-menubar);
+  color: var(--color-vsc-text);
+}
+
+/* ============================================
+   Tooltip
+   ============================================ */
+
+.tooltip-wrapper {
+  position: relative;
+}
+
+.tooltip-wrapper:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--color-vsc-menubar);
+  border: 1px solid var(--color-vsc-border);
+  color: var(--color-vsc-text);
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 3px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* ============================================
+   Input Modal
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  z-index: 1000;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.modal-input-box {
+  background: var(--color-vsc-sidebar);
+  border: 1px solid var(--color-vsc-border);
+  border-radius: 6px;
+  padding: 0;
+  width: 500px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.modal-input-box input {
+  width: 100%;
+  background: var(--color-vsc-input-bg);
+  border: none;
+  border-bottom: 1px solid var(--color-vsc-statusbar);
+  color: var(--color-vsc-text);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: var(--font-vsc);
+  outline: none;
+}
+
+.modal-input-box input::placeholder {
+  color: var(--color-vsc-text-dim);
+}

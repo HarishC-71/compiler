@@ -32,9 +32,13 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
     return;
   }
 
+  // Determine javac and java command paths (supports JAVA_HOME or system PATH)
+  const javacCmd = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'javac') : 'javac';
+  const javaCmd = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'java') : 'java';
+
   // 1. Compile Phase (javac)
   socket.emit('output', { type: 'info', data: 'Compiling Java program...\r\n' });
-  const compiler = spawn('javac', [fileName], { cwd: tempDir });
+  const compiler = spawn(javacCmd, [fileName], { cwd: tempDir });
 
   let compileErrorOutput = '';
 
@@ -65,7 +69,7 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
     let timeoutTimer;
 
     try {
-      child = spawn('java', ['-cp', '.', className], { cwd: tempDir });
+      child = spawn(javaCmd, ['-cp', '.', className], { cwd: tempDir });
     } catch (err) {
       socket.emit('output', { type: 'stderr', data: `Execution failed to start: ${err.message}\r\n` });
       onProcessEnd(1, 'error', `Failed to start java: ${err.message}`);

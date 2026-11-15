@@ -41,9 +41,19 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    // Allow server-to-server, curl, uptime checks without origin header
+    if (!origin) {
       return callback(null, true);
     }
+    // Allow explicitly defined client URLs & localhost
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    // Allow all Vercel deployments (production, previews, branch deploys)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    // Allow Render deployments
     if (origin.endsWith('.onrender.com')) {
       return callback(null, true);
     }
