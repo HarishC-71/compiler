@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "build": "echo 'No backend build required'"
+    "postinstall": "node scripts/install-jdk.js",
+    "build": "node scripts/install-jdk.js"
   },
   "dependencies": {
     "express": "^5.2.1",

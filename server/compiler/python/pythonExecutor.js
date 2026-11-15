@@ -49,12 +49,21 @@ export function executePython(socket, code, tempDir, timeout, onProcessStarted, 
   // Pass execution handle back for interaction
   onProcessStarted(child);
 
+  // Track execution finish
+  let executionEnded = false;
+  const finishExecution = (code, status, output) => {
+    if (executionEnded) return;
+    executionEnded = true;
+    clearTimeout(timeoutTimer);
+    onProcessEnd(code, status, output);
+  };
+
   // Set timeout timer
   timeoutTimer = setTimeout(() => {
     if (child && !child.killed) {
       socket.emit('output', { type: 'stderr', data: `\r\nExecution Timed Out (Limit: ${timeout / 1000}s)\r\n` });
       child.kill('SIGKILL');
-      onProcessEnd(null, 'timeout', 'Execution timed out');
+      finishExecution(null, 'timeout', 'Execution timed out');
     }
   }, timeout);
 
@@ -75,18 +84,16 @@ export function executePython(socket, code, tempDir, timeout, onProcessStarted, 
   });
 
   child.on('error', (err) => {
-    clearTimeout(timeoutTimer);
     socket.emit('output', { type: 'stderr', data: `Runtime error: ${err.message}\r\n` });
-    onProcessEnd(1, 'error', `Runtime error: ${err.message}`);
+    finishExecution(1, 'error', `Runtime error: ${err.message}`);
   });
 
   child.on('close', (exitCode, signal) => {
-    clearTimeout(timeoutTimer);
     const isStopped = signal === 'SIGKILL' || signal === 'SIGTERM';
     const status = isStopped
       ? (runtimeOutput.includes('Timed Out') ? 'timeout' : 'stopped')
       : (exitCode === 0 ? 'completed' : 'error');
 
-    onProcessEnd(exitCode, status, runtimeOutput);
+    finishExecution(exitCode, status, runtimeOutput);
   });
 }

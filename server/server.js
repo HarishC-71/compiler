@@ -22,6 +22,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, '../client/dist');
 
+// Auto-detect portable JDK on Render/Linux if present in server/jdk or root/jdk
+const localJdkDir = path.resolve(__dirname, 'jdk');
+const rootJdkDir = path.resolve(__dirname, '../jdk');
+const activeJdkDir = fs.existsSync(path.join(localJdkDir, 'bin', 'javac'))
+  ? localJdkDir
+  : (fs.existsSync(path.join(rootJdkDir, 'bin', 'javac')) ? rootJdkDir : null);
+
+if (activeJdkDir) {
+  process.env.JAVA_HOME = activeJdkDir;
+  const binDir = path.join(activeJdkDir, 'bin');
+  if (!process.env.PATH.includes(binDir)) {
+    process.env.PATH = `${binDir}${path.delimiter}${process.env.PATH}`;
+  }
+  console.log(`[JDK] Configured standalone OpenJDK at: ${activeJdkDir}`);
+}
+
 const app = express();
 const httpServer = createServer(app);
 

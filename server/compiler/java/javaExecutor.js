@@ -1,11 +1,47 @@
 /**
  * javaExecutor.js
  * Handles compilation and execution of Java code locally.
+ * Supports auto-resolving portable OpenJDK or system javac/java binaries.
  */
 
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Resolve javac and java commands from candidate locations
+ */
+function getJavaBinaries() {
+  const isWin = process.platform === 'win32';
+  const javacName = isWin ? 'javac.exe' : 'javac';
+  const javaName = isWin ? 'java.exe' : 'java';
+
+  const candidates = [
+    process.env.JAVA_HOME,
+    path.resolve(process.cwd(), 'jdk'),
+    path.resolve(__dirname, '../../jdk'),
+    path.resolve(__dirname, '../../../jdk'),
+    '/opt/render/project/src/server/jdk',
+    '/opt/render/project/src/jdk',
+    '/usr/lib/jvm/default-java',
+    '/usr/lib/jvm/java-21-openjdk-amd64',
+    '/usr/lib/jvm/java-17-openjdk-amd64',
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    const candidateJavac = path.join(dir, 'bin', javacName);
+    const candidateJava = path.join(dir, 'bin', javaName);
+    if (fs.existsSync(candidateJavac) && fs.existsSync(candidateJava)) {
+      return { javacCmd: candidateJavac, javaCmd: candidateJava };
+    }
+  }
+
+  return { javacCmd: javacName, javaCmd: javaName };
+}
 
 /**
  * Compile and run Java code
@@ -32,15 +68,14 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
     return;
   }
 
-  // Determine javac and java command paths (supports JAVA_HOME or system PATH)
-  const javacCmd = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'javac') : 'javac';
-  const javaCmd = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'java') : 'java';
+  const { javacCmd, javaCmd } = getJavaBinaries();
 
   // 1. Compile Phase (javac)
   socket.emit('output', { type: 'info', data: 'Compiling Java program...\r\n' });
   const compiler = spawn(javacCmd, [fileName], { cwd: tempDir });
 
   let compileErrorOutput = '';
+  let compileEnded = false;
 
   compiler.stderr.on('data', (data) => {
     const text = data.toString();
@@ -51,11 +86,19 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
   });
 
   compiler.on('error', (err) => {
-    socket.emit('output', { type: 'stderr', data: `Compilation failed to start: ${err.message}\r\nMake sure JDK (javac) is installed and available in server PATH.\r\n` });
+    if (compileEnded) return;
+    compileEnded = true;
+    socket.emit('output', { 
+      type: 'stderr', 
+      data: `Compilation failed to start: ${err.message}\r\nMake sure JDK (javac) is installed and available in server PATH.\r\n` 
+    });
     onProcessEnd(1, 'error', `Failed to start compiler: ${err.message}`);
   });
 
   compiler.on('close', (exitCode) => {
+    if (compileEnded) return;
+    compileEnded = true;
+
     if (exitCode !== 0) {
       socket.emit('output', { type: 'stderr', data: `\r\nCompilation failed with exit code ${exitCode}\r\n` });
       onProcessEnd(exitCode, 'error', compileErrorOutput);
@@ -79,12 +122,21 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
     // Pass the run handle back to the caller for interactive stdin and process stopping
     onProcessStarted(child);
 
+    // Track execution completion to avoid duplicate callbacks
+    let executionEnded = false;
+    const finishExecution = (code, status, output) => {
+      if (executionEnded) return;
+      executionEnded = true;
+      clearTimeout(timeoutTimer);
+      onProcessEnd(code, status, output);
+    };
+
     // Set execution timeout
     timeoutTimer = setTimeout(() => {
       if (child && !child.killed) {
         socket.emit('output', { type: 'stderr', data: `\r\nExecution Timed Out (Limit: ${timeout / 1000}s)\r\n` });
         child.kill('SIGKILL');
-        onProcessEnd(null, 'timeout', 'Execution timed out');
+        finishExecution(null, 'timeout', 'Execution timed out');
       }
     }, timeout);
 
@@ -106,19 +158,17 @@ export function executeJava(socket, code, tempDir, timeout, onProcessStarted, on
     });
 
     child.on('error', (err) => {
-      clearTimeout(timeoutTimer);
       socket.emit('output', { type: 'stderr', data: `Runtime error: ${err.message}\r\n` });
-      onProcessEnd(1, 'error', `Runtime error: ${err.message}`);
+      finishExecution(1, 'error', `Runtime error: ${err.message}`);
     });
 
     child.on('close', (runExitCode, signal) => {
-      clearTimeout(timeoutTimer);
       const isStopped = signal === 'SIGKILL' || signal === 'SIGTERM';
       const status = isStopped 
         ? (runtimeOutput.includes('Timed Out') ? 'timeout' : 'stopped')
         : (runExitCode === 0 ? 'completed' : 'error');
 
-      onProcessEnd(runExitCode, status, runtimeOutput);
+      finishExecution(runExitCode, status, runtimeOutput);
     });
   });
 }
