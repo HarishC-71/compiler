@@ -12,12 +12,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'https://compiler-bk4w.onrender.com',
         changeOrigin: true,
+        secure: false,
       },
       '/socket.io': {
-        target: 'http://localhost:3001',
+        target: 'https://compiler-bk4w.onrender.com',
         ws: true,
+        changeOrigin: true,
+        secure: false,
       },
     },
   },
